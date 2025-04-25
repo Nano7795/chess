@@ -1,5 +1,5 @@
 const CACHE_NAME = 'my-app-cache-v1';
-const urlsToCache = ['/', '/chess/index.html', '/chess/icon.png', '/chess/manifest.json'];
+const urlsToCache = ['/chess/', '/chess/index.html', '/chess/icon.png', '/chess/manifest.json'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
