@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chess Game</title>
-    	<link rel="manifest" href="manifest.json">
     <style>
         /* Basic Reset */
         * {
@@ -165,9 +164,76 @@
                 font-size: 0.9em;
             }
         }
+        
+        #pwa-install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  z-index: 9999;
+  padding: 8px 16px;
+}
+
+.pwa-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pwa-app-info {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: #333;
+}
+
+.pwa-app-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+  border-radius: 8px;
+}
+
+.pwa-app-name {
+  font-weight: 500;
+  font-size: 16px;
+}
+
+.pwa-install-button {
+  background: #3367D6;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pwa-close-button {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  margin-left: 10px;
+  cursor: pointer;
+  color: #666;
+}
     </style>
 </head>
 <body>
+<div id="pwa-install-banner" style="display:none;">
+  <div class="pwa-banner-content">
+    <a href="/" class="pwa-app-info">
+      <img src="/icon.png" alt="App Icon" class="pwa-app-icon">
+      <span class="pwa-app-name">My App</span>
+    </a>
+    <button id="pwa-install-btn" class="pwa-install-button">Install</button>
+    <button id="pwa-close-btn" class="pwa-close-button">×</button>
+  </div>
+</div>
 
     <div class="game-container">
         <div id="status">White turn</div>
@@ -601,55 +667,49 @@
 
         // --- Initial Game Setup ---
         initializeBoard();
+        
+        let deferredPrompt;
 
-// Global variable to hold the install prompt event
-let deferredPrompt;
-
-// Listen for the 'beforeinstallprompt' event (triggered by Chrome when PWA is eligible)
+// Show banner when PWA is installable
 window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault(); // Prevent automatic prompt
-  deferredPrompt = e; // Store the event for later use
+  e.preventDefault();
+  deferredPrompt = e;
   
-  // Show your custom popup (CSS se style karein)
-  showInstallPopup();
+  const banner = document.getElementById('pwa-install-banner');
+  banner.style.display = 'block';
+  
+  // Set app name and icon from manifest
+  if ('manifest' in document) {
+    fetch('/manifest.json')
+      .then(res => res.json())
+      .then(manifest => {
+        if (manifest.name) {
+          document.querySelector('.pwa-app-name').textContent = manifest.name;
+        }
+        if (manifest.icons && manifest.icons[0]) {
+          document.querySelector('.pwa-app-icon').src = manifest.icons[0].src;
+        }
+      });
+  }
 });
 
-// Function to show your custom popup
-function showInstallPopup() {
-  const popup = document.createElement('div');
-  popup.style.position = 'fixed';
-  popup.style.top = '10px';
-  popup.style.left = '50%';
-  popup.style.transform = 'translateX(-50%)';
-  popup.style.backgroundColor = '#ffffff';
-  popup.style.padding = '10px';
-  popup.style.borderRadius = '5px';
-  popup.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
-  popup.style.zIndex = '1000';
-  popup.innerHTML = `
-    <p>Install our app for better experience!</p>
-    <button id="install-btn" style="padding: 5px 10px; background: #3367D6; color: white; border: none; border-radius: 3px;">Install Now</button>
-    <button id="close-btn" style="margin-left: 5px; padding: 5px 10px; background: #ccc; border: none; border-radius: 3px;">Close</button>
-  `;
-  
-  document.body.appendChild(popup);
-
-  // Handle Install Button Click
-  document.getElementById('install-btn').addEventListener('click', () => {
-    deferredPrompt.prompt(); // Show Chrome's install prompt
-    deferredPrompt.userChoice.then((choice) => {
+// Handle install button click
+document.getElementById('pwa-install-btn').addEventListener('click', () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choice => {
       if (choice.outcome === 'accepted') {
-        console.log('User installed the app');
+        document.getElementById('pwa-install-banner').style.display = 'none';
       }
-      popup.remove(); // Remove popup after choice
+      deferredPrompt = null;
     });
-  });
+  }
+});
 
-  // Handle Close Button Click
-  document.getElementById('close-btn').addEventListener('click', () => {
-    popup.remove();
-  });
-}
+// Handle close button click
+document.getElementById('pwa-close-btn').addEventListener('click', () => {
+  document.getElementById('pwa-install-banner').style.display = 'none';
+});
     </script>
     <script>
 if ('serviceWorker' in navigator) {
@@ -660,6 +720,5 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-    
 </body>
 </html>
