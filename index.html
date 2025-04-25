@@ -602,26 +602,54 @@
         // --- Initial Game Setup ---
         initializeBoard();
 
-        let deferredPrompt;
+// Global variable to hold the install prompt event
+let deferredPrompt;
 
+// Listen for the 'beforeinstallprompt' event (triggered by Chrome when PWA is eligible)
 window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
+  e.preventDefault(); // Prevent automatic prompt
+  deferredPrompt = e; // Store the event for later use
   
-  // Show your custom install button
-  const installBtn = document.getElementById('install-btn');
-  installBtn.style.display = 'block';
+  // Show your custom popup (CSS se style karein)
+  showInstallPopup();
+});
+
+// Function to show your custom popup
+function showInstallPopup() {
+  const popup = document.createElement('div');
+  popup.style.position = 'fixed';
+  popup.style.top = '10px';
+  popup.style.left = '50%';
+  popup.style.transform = 'translateX(-50%)';
+  popup.style.backgroundColor = '#ffffff';
+  popup.style.padding = '10px';
+  popup.style.borderRadius = '5px';
+  popup.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+  popup.style.zIndex = '1000';
+  popup.innerHTML = `
+    <p>Install our app for better experience!</p>
+    <button id="install-btn" style="padding: 5px 10px; background: #3367D6; color: white; border: none; border-radius: 3px;">Install Now</button>
+    <button id="close-btn" style="margin-left: 5px; padding: 5px 10px; background: #ccc; border: none; border-radius: 3px;">Close</button>
+  `;
   
-  installBtn.addEventListener('click', () => {
-    deferredPrompt.prompt();
+  document.body.appendChild(popup);
+
+  // Handle Install Button Click
+  document.getElementById('install-btn').addEventListener('click', () => {
+    deferredPrompt.prompt(); // Show Chrome's install prompt
     deferredPrompt.userChoice.then((choice) => {
       if (choice.outcome === 'accepted') {
         console.log('User installed the app');
       }
-      deferredPrompt = null;
+      popup.remove(); // Remove popup after choice
     });
   });
-});
+
+  // Handle Close Button Click
+  document.getElementById('close-btn').addEventListener('click', () => {
+    popup.remove();
+  });
+}
     </script>
     <script>
 if ('serviceWorker' in navigator) {
